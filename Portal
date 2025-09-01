@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduSphere AI UpSkilling Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #E0E0E0;
+        }
+        .container {
+            max-width: 32rem;
+        }
+        .bg-card {
+            background-color: #1E1E1E;
+        }
+        .btn {
+            @apply px-6 py-3 rounded-lg font-semibold transition-transform transform hover:scale-105;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+<div id="app-container" class="container w-full bg-card rounded-xl shadow-lg p-6 sm:p-8">
+    
+    <!-- Initial State -->
+    <div id="welcome-screen">
+        <div class="text-center">
+            <h1 class="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-2">Hipnotik x EduSphere</h1>
+            <h2 class="text-xl sm:text-2xl font-bold mb-4">AI UpSkilling Portal</h2>
+            <p class="text-lg sm:text-xl font-medium mb-8">Find your learning track and unlock your festival opportunity.</p>
+        </div>
+        <div class="space-y-4">
+            <button onclick="startQuiz()" class="w-full btn bg-purple-500 text-white hover:bg-purple-600">I'm interested in festival roles</button>
+            <button onclick="showTracks()" class="w-full btn bg-gray-700 text-gray-300 hover:bg-gray-600">I just want to learn</button>
+        </div>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quiz-screen" class="hidden">
+        <h2 class="text-2xl font-bold mb-4">Festival Role Assessment</h2>
+        <div id="quiz-content"></div>
+        <div id="quiz-feedback" class="mt-4 text-center"></div>
+        <div class="flex justify-between mt-6">
+            <button id="prev-btn" onclick="prevQuestion()" class="btn bg-gray-600 text-white hidden">Previous</button>
+            <button id="next-btn" onclick="nextQuestion()" class="btn bg-purple-500 text-white ml-auto">Next</button>
+        </div>
+    </div>
+
+    <!-- Learning Tracks Screen -->
+    <div id="tracks-screen" class="hidden">
+        <h2 class="text-2xl font-bold mb-4">Choose Your Track</h2>
+        <p class="text-sm text-gray-400 mb-6">Take a mini quiz to test your knowledge and see if it's the right fit!</p>
+        <div id="track-list" class="space-y-4"></div>
+    </div>
+
+    <!-- Track Quiz Screen -->
+    <div id="track-quiz-screen" class="hidden">
+        <h2 id="track-quiz-title" class="text-2xl font-bold mb-4"></h2>
+        <div id="track-quiz-intro" class="mb-6 text-gray-300"></div>
+        <div id="track-quiz-questions"></div>
+        <button onclick="submitTrackQuiz()" class="w-full btn bg-purple-500 text-white mt-6">Submit Quiz</button>
+    </div>
+
+    <!-- Results Screen -->
+    <div id="results-screen" class="hidden text-center">
+        <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-4">🎉 Great work!</h2>
+        <p id="results-text" class="text-lg font-medium mb-2">Based on your responses, here’s your path:</p>
+        <div id="results-details" class="bg-gray-800 rounded-lg p-4 my-6"></div>
+        <p class="text-sm mb-6">
+            Ready to dive deeper? Get certified and unlock more AI resources to start your journey.
+        </p>
+        <button onclick="showLeadCapture()" class="w-full btn bg-purple-500 text-white">Claim your spot + Get Free EduSphere AI Resources</button>
+    </div>
+
+    <!-- Lead Capture Form -->
+    <div id="lead-capture-screen" class="hidden">
+        <h2 class="text-2xl font-bold mb-4 text-center">Sign up to continue your journey</h2>
+        <p class="text-sm text-gray-400 mb-6 text-center">Get certified with EduSphere and access exclusive content.</p>
+        <form id="contact-form" action="https://getform.io/f/bmdyykea" method="POST" class="space-y-4">
+            <div class="relative">
+                <input type="text" id="name" name="name" class="w-full p-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Your Name" required>
+            </div>
+            <div class="relative">
+                <input type="email" id="email" name="email" class="w-full p-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Your Email" required>
+            </div>
+            <div class="relative">
+                <input type="tel" id="whatsapp" name="whatsapp" class="w-full p-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="WhatsApp Number" required>
+            </div>
+            <input type="hidden" id="selected-track" name="learning_track">
+            <input type="hidden" id="recommended-role" name="festival_role">
+            <input type="hidden" id="quiz-score" name="quiz_score">
+            <button type="submit" class="w-full btn bg-purple-500 text-white hover:bg-purple-600 mt-4">Sign Up</button>
+        </form>
+    </div>
+
+    <!-- Modal for messages (replaces alert()) -->
+    <div id="message-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden">
+        <div class="bg-gray-800 rounded-lg p-6 max-w-sm mx-auto text-center shadow-lg">
+            <p id="modal-text" class="text-white mb-4"></p>
+            <button onclick="closeModal()" class="btn bg-purple-500 text-white">OK</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const appContainer = document.getElementById('app-container');
+    const welcomeScreen = document.getElementById('welcome-screen');
+    const quizScreen = document.getElementById('quiz-screen');
+    const tracksScreen = document.getElementById('tracks-screen');
+    const trackQuizScreen = document.getElementById('track-quiz-screen');
+    const resultsScreen = document.getElementById('results-screen');
+    const leadCaptureScreen = document.getElementById('lead-capture-screen');
+    const modal = document.getElementById('message-modal');
+
+    // State
+    let quizState = {
+        currentQuestion: 0,
+        answers: {},
+        trackQuizScore: 0,
+        selectedTrack: null,
+        recommendedRole: null
+    };
+
+    const festivalQuiz = [
+        {
+            question: "You're at a festival. What's your first instinct?",
+            options: [
+                { text: "Find the best angle for a live stream", role: "Digital Crew" },
+                { text: "Go backstage and meet the artists", role: "Business/Partnerships" },
+                { text: "Listen to the music and feel the crowd's energy", role: "Creative/Performers" }
+            ]
+        },
+        {
+            question: "A band cancels last minute. How do you react?",
+            options: [
+                { text: "Post a creative announcement and poll for new acts", role: "Digital Crew" },
+                { text: "Call sponsors to manage the change", role: "Business/Partnerships" },
+                { text: "Offer to fill in with your own performance", role: "Creative/Performers" }
+            ]
+        },
+        {
+            question: "You've got a great idea. What's the next step?",
+            options: [
+                { text: "Build a social media strategy to make it go viral", role: "Digital Crew" },
+                { text: "Create a budget and a pitch deck for a potential partner", role: "Business/Partnerships" },
+                { text: "Write a song or create a visual to express it", role: "Creative/Performers" }
+            ]
+        },
+        {
+            question: "What's more exciting to you?",
+            options: [
+                { text: "A massive online following and viral content", role: "Digital Crew" },
+                { text: "Signing a major deal or securing a big sponsorship", role: "Business/Partnerships" },
+                { text: "A standing ovation after a live performance", role: "Creative/Performers" }
+            ]
+        },
+        {
+            question: "At a networking event, you:",
+            options: [
+                { text: "Capture the best moments and post on your story", role: "Digital Crew" },
+                { text: "Exchange business cards and discuss potential collaborations", role: "Business/Partnerships" },
+                { text: "Talk to people about your craft and get their feedback", role: "Creative/Performers" }
+            ]
+        }
+    ];
+
+    const tracks = {
+        'ai-content-creation': {
+            title: "AI Content Creation",
+            intro: "Harness the power of AI to create groundbreaking music, stunning visuals, and engaging content that stands out in the digital noise. AI is your co-pilot to amplify creativity.",
+            insights: [
+                "Globally, the AI in the music market is projected to grow to over $2.6 billion by 2030, with a focus on AI-generated music and personalized recommendations.",
+                "In Africa, platforms are emerging that use AI to help local artists bypass traditional gatekeepers and connect directly with a global audience.",
+                "AI-powered tools can analyze millions of data points to predict hit song trends, helping artists and producers make more informed creative decisions."
+            ],
+            resources: [
+                { text: "A simple guide to using AI for music production", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+                { text: "A report on AI's impact on the creative economy", url: "https://www.example.com/ai-creative-economy-report" }
+            ],
+            quiz: [
+                {
+                    question: "An AI model generates a beat. What's the most important next step?",
+                    options: [
+                        { text: "Add your unique artistic flair and human touch", isCorrect: true },
+                        { text: "Use it as is and immediately release it", isCorrect: false },
+                        { text: "Send it to a friend for feedback without any changes", isCorrect: false }
+                    ]
+                },
+                {
+                    question: "You're writing lyrics with an AI. It suggests a line you don't like. What do you do?",
+                    options: [
+                        { text: "Force the AI to rephrase it until you like it", isCorrect: false },
+                        { text: "Take the core idea and rewrite it in your own voice", isCorrect: true },
+                        { text: "Scrap the entire project and start over", isCorrect: false }
+                    ]
+                },
+                {
+                    question: "Which of these is the biggest benefit of using AI in content creation?",
+                    options: [
+                        { text: "It completely replaces the need for human creativity", isCorrect: false },
+                        { text: "It automates repetitive tasks and helps you generate ideas faster", isCorrect: true },
+                        { text: "It guarantees your content will go viral every time", isCorrect: false }
+                    ]
+                }
+            ]
+        },
+        'branding-digital-marketing': {
+            title: "Branding & Digital Marketing",
+            intro: "Stand out in a crowded market by building a powerful personal brand and mastering digital strategies. This track shows you how to connect with your audience and turn your passion into a profitable business.",
+            insights: [
+                "Social media usage in Africa has seen explosive growth, with platforms like TikTok and Instagram becoming key channels for artists to build a following.",
+                "The 'creator economy' is booming globally, and savvy creators are leveraging personal branding to secure brand deals and sponsorships.",
+                "Building a strong digital presence is no longer optional for artists; it's the primary way to manage fan engagement and sell merchandise directly."
+            ],
+            resources: [
+                { text: "How to build an artist brand on a budget", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+                { text: "The ultimate guide to social media marketing for creators", url: "https://www.example.com/creator-marketing-guide" }
+            ],
+            quiz: [
+                {
+                    question: "Your goal is to build a personal brand. What is your first step?",
+                    options: [
+                        { text: "Just start posting random content and see what sticks", isCorrect: false },
+                        { text: "Define your unique voice and what you stand for", isCorrect: true },
+                        { text: "Buy followers to quickly grow your audience", isCorrect: false }
+                    ]
+                },
+                {
+                    question: "You've created a great video. How do you maximize its reach?",
+                    options: [
+                        { text: "Post it once and forget about it", isCorrect: false },
+                        { text: "Use relevant hashtags and a call-to-action to engage your audience", isCorrect: true },
+                        { text: "Only share it with your closest friends", isCorrect: false }
+                    ]
+                },
+                {
+                    question: "Which of these is most important for a strong digital presence?",
+                    options: [
+                        { text: "Having the most expensive camera equipment", isCorrect: false },
+                        { text: "Creating a consistent and authentic online identity", isCorrect: true },
+                        { text: "Only posting content that you know will go viral", isCorrect: false }
+                    ]
+                }
+            ]
+        },
+        'business-of-music': {
+            title: "Business of Music in Africa",
+            intro: "Understand the industry from the inside out—from securing copyrights and IP to navigating contracts and monetization. Learn how to turn your passion into a sustainable career.",
+            insights: [
+                "The music industry in Africa is projected to reach over $500 million by 2025, driven by a growing youth population and increased digital connectivity.",
+                "Royalties and intellectual property (IP) protection are becoming more critical for African artists as their work gains global recognition.",
+                "Understanding contracts and negotiation is key to ensuring you get fair compensation and ownership of your creative work."
+            ],
+            resources: [
+                { text: "Introduction to copyright for musicians", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+                { text: "A beginner's guide to music publishing", url: "https://www.example.com/music-business-guide" }
+            ],
+            quiz: [
+                {
+                    question: "You've written a new song. What's the first business step you should take?",
+                    options: [
+                        { text: "Post it on social media without any legal protection", isCorrect: false },
+                        { text: "Register your copyright to protect your work", isCorrect: true },
+                        { text: "Pitch it to a record label without a clear business plan", isCorrect: false }
+                    ]
+                },
+                {
+                    question: "What does 'monetizing content' mean in the music business?",
+                    options: [
+                        { text: "Giving your music away for free", isCorrect: false },
+                        { text: "Finding ways to earn money from your creative work, like through royalties, streams, and merchandise", isCorrect: true },
+                        { text: "Only performing live at large venues", isCorrect: false }
+                    ]
+                },
+                {
+                    question: "Which of the following is most important when negotiating a contract?",
+                    options: [
+                        { text: "Accepting the first offer you receive", isCorrect: false },
+                        { text: "Asking questions and understanding all the terms", isCorrect: true },
+                        { text: "Signing it as quickly as possible to get started", isCorrect: false }
+                    ]
+                }
+            ]
+        }
+    };
+
+    function showScreen(screenId) {
+        const screens = [welcomeScreen, quizScreen, tracksScreen, trackQuizScreen, resultsScreen, leadCaptureScreen];
+        screens.forEach(screen => {
+            screen.classList.add('hidden');
+        });
+        document.getElementById(screenId).classList.remove('hidden');
+    }
+
+    function startQuiz() {
+        quizState.currentQuestion = 0;
+        quizState.answers = {};
+        renderQuizQuestion();
+        showScreen('quiz-screen');
+    }
+
+    function renderQuizQuestion() {
+        const quizContent = document.getElementById('quiz-content');
+        quizContent.innerHTML = '';
+        const currentQ = festivalQuiz[quizState.currentQuestion];
+
+        const questionDiv = document.createElement('div');
+        questionDiv.className = 'bg-gray-800 rounded-lg p-4 mb-4';
+        questionDiv.innerHTML = `<p class="text-lg font-medium mb-4">${quizState.currentQuestion + 1}. ${currentQ.question}</p>`;
+
+        const optionsDiv = document.createElement('div');
+        optionsDiv.className = 'space-y-3';
+        currentQ.options.forEach((option, index) => {
+            const optionBtn = document.createElement('button');
+            optionBtn.className = 'w-full btn bg-gray-700 text-gray-300 hover:bg-purple-500 hover:text-white';
+            optionBtn.textContent = option.text;
+            optionBtn.onclick = () => selectQuizAnswer(option.role);
+            optionsDiv.appendChild(optionBtn);
+        });
+
+        questionDiv.appendChild(optionsDiv);
+        quizContent.appendChild(questionDiv);
+
+        updateNavButtons();
+    }
+
+    function selectQuizAnswer(role) {
+        quizState.answers[quizState.currentQuestion] = role;
+        const options = document.querySelectorAll('#quiz-content button');
+        options.forEach(btn => {
+            btn.classList.remove('bg-purple-500', 'text-white');
+            btn.classList.add('bg-gray-700', 'text-gray-300');
+        });
+        const selectedOption = Array.from(options).find(btn => btn.textContent.includes(role));
+        if (selectedOption) {
+            selectedOption.classList.remove('bg-gray-700', 'text-gray-300');
+            selectedOption.classList.add('bg-purple-500', 'text-white');
+        }
+        
+    }
+
+    function updateNavButtons() {
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+
+        if (quizState.currentQuestion > 0) {
+            prevBtn.classList.remove('hidden');
+        } else {
+            prevBtn.classList.add('hidden');
+        }
+
+        if (quizState.currentQuestion === festivalQuiz.length - 1) {
+            nextBtn.textContent = 'See Results';
+            nextBtn.onclick = showResults;
+        } else {
+            nextBtn.textContent = 'Next';
+            nextBtn.onclick = nextQuestion;
+        }
+    }
+
+    function nextQuestion() {
+        if (quizState.answers[quizState.currentQuestion]) {
+            quizState.currentQuestion++;
+            renderQuizQuestion();
+        } else {
+            showMessage("Please select an option before proceeding.");
+        }
+    }
+
+    function prevQuestion() {
+        quizState.currentQuestion--;
+        renderQuizQuestion();
+    }
+
+    function showResults() {
+        const results = {};
+        for (const key in quizState.answers) {
+            const role = quizState.answers[key];
+            results[role] = (results[role] || 0) + 1;
+        }
+
+        let maxCount = 0;
+        let recommendedRole = '';
+        for (const role in results) {
+            if (results[role] > maxCount) {
+                maxCount = results[role];
+                recommendedRole = role;
+            }
+        }
+
+        quizState.recommendedRole = recommendedRole;
+        let learningTrack = '';
+        if (recommendedRole === 'Digital Crew') {
+            learningTrack = 'Branding & Digital Marketing';
+        } else if (recommendedRole === 'Business/Partnerships') {
+            learningTrack = 'Business of Music in Africa';
+        } else {
+            learningTrack = 'AI Content Creation';
+        }
+
+        quizState.selectedTrack = learningTrack;
+
+        const resultsDetails = document.getElementById('results-details');
+        resultsDetails.innerHTML = `
+            <p class="font-bold text-lg mb-2">Recommended Role: ${recommendedRole}</p>
+            <p class="font-medium text-purple-300">Learning Track: ${learningTrack}</p>
+        `;
+
+        document.getElementById('recommended-role').value = recommendedRole;
+        document.getElementById('selected-track').value = learningTrack;
+        document.getElementById('quiz-score').value = 'N/A';
+        
+        showScreen('results-screen');
+    }
+
+    function showTracks() {
+        const trackList = document.getElementById('track-list');
+        trackList.innerHTML = '';
+        
+        for (const key in tracks) {
+            const track = tracks[key];
+            const trackDiv = document.createElement('div');
+            trackDiv.className = 'bg-gray-800 rounded-lg p-4 space-y-2';
+            trackDiv.innerHTML = `
+                <h3 class="font-bold text-lg">${track.title}</h3>
+                <p class="text-sm text-gray-400">${track.intro}</p>
+                <div class="space-y-2">
+                    <p class="font-medium text-sm text-purple-400">Mini-Research Insights:</p>
+                    <ul class="list-disc list-inside text-xs text-gray-400 space-y-1">
+                        ${track.insights.map(insight => `<li>${insight}</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="space-y-2">
+                    <p class="font-medium text-sm text-purple-400">Sample Resources:</p>
+                    <ul class="text-xs text-gray-400 space-y-1">
+                        ${track.resources.map(res => `<li><a href="${res.url}" target="_blank" class="text-purple-400 hover:underline">${res.text}</a></li>`).join('')}
+                    </ul>
+                </div>
+                <button onclick="startTrackQuiz('${key}')" class="w-full btn bg-purple-500 text-white mt-4">Take Quiz</button>
+            `;
+            trackList.appendChild(trackDiv);
+        }
+
+        showScreen('tracks-screen');
+    }
+
+    function startTrackQuiz(trackId) {
+        quizState.selectedTrack = tracks[trackId].title;
+        quizState.trackQuizScore = 0;
+        document.getElementById('track-quiz-title').textContent = `${tracks[trackId].title} Quiz`;
+        document.getElementById('track-quiz-intro').innerHTML = `
+            <p>Ready to test your knowledge? Answer these questions to see how well you know this field!</p>
+        `;
+        
+        const quizQuestionsContainer = document.getElementById('track-quiz-questions');
+        quizQuestionsContainer.innerHTML = '';
+
+        tracks[trackId].quiz.forEach((q, index) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'mb-4 bg-gray-800 rounded-lg p-4';
+            questionDiv.innerHTML = `<p class="font-medium mb-3">${index + 1}. ${q.question}</p>`;
+            
+            q.options.forEach((option, i) => {
+                const optionBtn = document.createElement('button');
+                optionBtn.className = 'w-full text-left px-4 py-2 my-1 rounded-md text-sm transition-colors duration-200 bg-gray-700 text-gray-300 hover:bg-purple-500 hover:text-white';
+                optionBtn.textContent = option.text;
+                optionBtn.dataset.isCorrect = option.isCorrect;
+                optionBtn.onclick = (e) => handleTrackQuizAnswer(e.target, index);
+                questionDiv.appendChild(optionBtn);
+            });
+            quizQuestionsContainer.appendChild(questionDiv);
+        });
+        showScreen('track-quiz-screen');
+    }
+
+    function handleTrackQuizAnswer(selectedOption, questionIndex) {
+        const questionDiv = selectedOption.closest('div');
+        const buttons = questionDiv.querySelectorAll('button');
+        
+        buttons.forEach(btn => btn.disabled = true);
+        
+        const isCorrect = selectedOption.dataset.isCorrect === 'true';
+        if (isCorrect) {
+            selectedOption.classList.remove('bg-gray-700', 'text-gray-300', 'hover:bg-purple-500', 'hover:text-white');
+            selectedOption.classList.add('bg-green-600', 'text-white');
+            quizState.trackQuizScore++;
+        } else {
+            selectedOption.classList.remove('bg-gray-700', 'text-gray-300', 'hover:bg-purple-500', 'hover:text-white');
+            selectedOption.classList.add('bg-red-600', 'text-white');
+            const correctOption = Array.from(buttons).find(btn => btn.dataset.isCorrect === 'true');
+            if (correctOption) {
+                correctOption.classList.add('bg-green-600', 'text-white');
+            }
+        }
+    }
+
+    function submitTrackQuiz() {
+        const totalQuestions = tracks[Object.keys(tracks).find(key => tracks[key].title === quizState.selectedTrack)].quiz.length;
+        document.getElementById('results-details').innerHTML = `
+            <p class="font-bold text-lg mb-2">Learning Track: ${quizState.selectedTrack}</p>
+            <p class="font-bold text-lg">Your Score: ${quizState.trackQuizScore}/${totalQuestions}</p>
+        `;
+
+        document.getElementById('selected-track').value = quizState.selectedTrack;
+        document.getElementById('recommended-role').value = 'N/A';
+        document.getElementById('quiz-score').value = `${quizState.trackQuizScore}/${totalQuestions}`;
+
+        showScreen('results-screen');
+    }
+
+    function showLeadCapture() {
+        showScreen('lead-capture-screen');
+    }
+
+    function showMessage(text) {
+        document.getElementById('modal-text').textContent = text;
+        modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+        modal.classList.add('hidden');
+    }
+
+</script>
+
+</body>
+</html>
